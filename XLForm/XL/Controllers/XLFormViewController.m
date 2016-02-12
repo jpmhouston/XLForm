@@ -133,9 +133,9 @@
     if (!self.tableView.dataSource){
         self.tableView.dataSource = self;
     }
+    self.tableView.rowHeight = 44.0; // note, not used by tableview directly since tableView:heightForRowAtIndexPath: is implemented
     if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8.0")){
-        self.tableView.rowHeight = UITableViewAutomaticDimension;
-        self.tableView.estimatedRowHeight = 44.0;
+        self.tableView.estimatedRowHeight = 44.0; // similarly, not used by tableview directly. maybe should be 0 to mean no estimate?
     }
     if (self.form.title){
         self.title = self.form.title;
@@ -718,23 +718,68 @@
 {
     XLFormRowDescriptor *rowDescriptor = [self.form formRowAtIndex:indexPath];
     Class cellClass = [[rowDescriptor cellForFormController:self] class];
+    
+    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8.0")){
+        // return automatic if cell uses self-sizing
+        if ([cellClass respondsToSelector:@selector(formDescriptorCellPrefersSelfSizingForRowDescriptor:inTableView:)]){
+            if ([cellClass formDescriptorCellPrefersSelfSizingForRowDescriptor:rowDescriptor inTableView:tableView])
+                return UITableViewAutomaticDimension;
+        }
+        
+        // use cell's method to calculate height if implemented, passing in tableview's default
+        if ([cellClass respondsToSelector:@selector(formDescriptorCalculateCellHeight:forRowDescriptor:inTableView:)]){
+            CGFloat height = self.tableView.rowHeight != UITableViewAutomaticDimension ? self.tableView.rowHeight :
+                (
+                 self.tableView.estimatedRowHeight != UITableViewAutomaticDimension ? self.tableView.estimatedRowHeight : 0
+                 );
+            
+            if ([cellClass formDescriptorCalculateCellHeight:&height forRowDescriptor:rowDescriptor inTableView:tableView])
+                return height; // breakpoint log: @rowDescriptor@ tableView:heightForRowAtIndexPath: @indexPath.section@/@indexPath.row@ returning @height@
+        }
+    }
+    else{
+        // use cell's method to calculate height if implemented, passing in tableview's default
+        if ([cellClass respondsToSelector:@selector(formDescriptorCalculateCellHeight:forRowDescriptor:inTableView:)]){
+            CGFloat height = self.tableView.rowHeight;
+            
+            if ([cellClass formDescriptorCalculateCellHeight:&height forRowDescriptor:rowDescriptor inTableView:tableView])
+                return height; // breakpoint log: @rowDescriptor@ tableView:heightForRowAtIndexPath: @indexPath.section@/@indexPath.row@ returning @height@
+        }
+    }
+    
+    // for backwards compatibility with cells coded to 3.10 & older, although on iOS8 & later,
+    // not implementing this method used to lead to returning rowHeight which by default was
+    // UITableViewAutomaticDimension but now 44:
     if ([cellClass respondsToSelector:@selector(formDescriptorCellHeightForRowDescriptor:)]){
         return [cellClass formDescriptorCellHeightForRowDescriptor:rowDescriptor];
     }
-    return self.tableView.rowHeight;
+    
+    return self.tableView.rowHeight; // breakpoint log: @rowDescriptor@ tableView:heightForRowAtIndexPath: @indexPath.section@/@indexPath.row@ returning @self.tableView.rowHeight@
 }
 
 -(CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     XLFormRowDescriptor *rowDescriptor = [self.form formRowAtIndex:indexPath];
     Class cellClass = [[rowDescriptor cellForFormController:self] class];
+    
+    // use cell's method to calculate estimate if implemented, passing in tableview's default
+    if ([cellClass respondsToSelector:@selector(formDescriptorCalculateCellHeightEstimate:forRowDescriptor:inTableView:)]){
+        CGFloat height = self.tableView.rowHeight;
+        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8.0") && height == UITableViewAutomaticDimension)
+            height = self.tableView.estimatedRowHeight != UITableViewAutomaticDimension ? self.tableView.estimatedRowHeight : 0;
+        
+        if ([cellClass formDescriptorCalculateCellHeightEstimate:&height forRowDescriptor:rowDescriptor inTableView:tableView])
+            return height; // breakpoint log: @rowDescriptor@ tableView:estimatedHeightForRowAtIndexPath: @indexPath.section@/@indexPath.row@ returning @height@
+    }
+    
+    // for backwards compatibility with cells coded to 3.10 & older, although on iOS7,
+    // not implementing this method used to lead to always returning 44 but now returns
+    // estimatedRowHeight or UITableViewAutomaticDimension if that's 0
     if ([cellClass respondsToSelector:@selector(formDescriptorCellHeightForRowDescriptor:)]){
         return [cellClass formDescriptorCellHeightForRowDescriptor:rowDescriptor];
     }
-    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8.0")){
-        return self.tableView.estimatedRowHeight;
-    }
-    return 44;
+    
+    return self.tableView.estimatedRowHeight != 0 ? self.tableView.estimatedRowHeight : UITableViewAutomaticDimension; // breakpoint log: @rowDescriptor@ tableView:estimatedHeightForRowAtIndexPath: @indexPath.section@/@indexPath.row@ returning @self.tableView.estimatedRowHeight@ (or 'automatic' if that's 0)
 }
 
 -(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath

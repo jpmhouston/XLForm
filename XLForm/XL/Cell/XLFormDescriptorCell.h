@@ -39,7 +39,13 @@
 
 @optional
 
++(BOOL)formDescriptorCalculateCellHeight:(inout CGFloat *)height forRowDescriptor:(XLFormRowDescriptor *)rowDescriptor inTableView:(UITableView *)tableView;
++(BOOL)formDescriptorCalculateCellHeightEstimate:(inout CGFloat *)heightEstimate forRowDescriptor:(XLFormRowDescriptor *)rowDescriptor inTableView:(UITableView *)tableView;
++(BOOL)formDescriptorCellPrefersSelfSizingForRowDescriptor:(XLFormRowDescriptor *)rowDescriptor inTableView:(UITableView *)tableView;
+
+// for backwards compatibility with 3.10 or earlier, the methods above take precedence if they are implemented
 +(CGFloat)formDescriptorCellHeightForRowDescriptor:(XLFormRowDescriptor *)rowDescriptor;
+
 -(BOOL)formDescriptorCellCanBecomeFirstResponder;
 -(BOOL)formDescriptorCellBecomeFirstResponder;
 -(void)formDescriptorCellDidSelectedWithFormController:(XLFormViewController *)controller;
