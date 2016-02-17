@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name     = 'XLForm'
-  s.version  = '3.1.0-rsw'
+  s.version  = '3.1.1-rsw'
   s.license  = { :type => 'MIT' }
   s.summary  = 'XLForm is the most flexible and powerful iOS library to create dynamic table-view forms.'
   s.description = <<-DESC
@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
                     This fork by Resilience Software improves the capability of cells to: 1. produce their estimated and accurately calculated row heights, and 2: enable self-sizing.
                   DESC
   s.homepage = 'https://github.com/jpmhouston/XLForm'
-  s.authors  = { 'Martin Barreto' => 'martin@xmartlabs.com' }
+  s.authors  = { 'Martin Barreto' => 'martin@xmartlabs.com', 'Pierre Houston' => 'phouston@resiliencesoftware.com' }
   s.source   = { :git => 'https://github.com/jpmhouston/XLForm.git', :tag => s.version }
   s.source_files = 'XLForm/XL/**/*.{h,m}'
   s.requires_arc = true
