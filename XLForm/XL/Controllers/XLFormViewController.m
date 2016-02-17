@@ -357,7 +357,10 @@
 
 -(void)didSelectFormRow:(XLFormRowDescriptor *)formRow
 {
-    if ([[formRow cellForFormController:self] respondsToSelector:@selector(formDescriptorCellDidSelectedWithFormController:)]){
+    if ([[formRow cellForFormController:self] respondsToSelector:@selector(formDescriptorCellSelectedWithFormController:)]){
+        [[formRow cellForFormController:self] formDescriptorCellSelectedWithFormController:self];
+    }
+    else if ([[formRow cellForFormController:self] respondsToSelector:@selector(formDescriptorCellDidSelectedWithFormController:)]){
         [[formRow cellForFormController:self] formDescriptorCellDidSelectedWithFormController:self];
     }
 }
@@ -610,7 +613,15 @@
 -(void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
 {
     XLFormRowDescriptor * rowDescriptor = [self.form formRowAtIndex:indexPath];
-    [self updateFormRow:rowDescriptor];
+    [self updateFormRow:rowDescriptor]; // breakpoint log: @rowDescriptor@ tableView:willDisplayCell:forRowAtIndexPath: @indexPath.section@/@indexPath.row@ @cell@
+    return; // this is here only for debugging so there's an extra line to break on
+}
+
+// implemented only for debugging:
+- (void)tableView:(UITableView *)tableView didEndDisplayingCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    __unused XLFormRowDescriptor *rowDescriptor = [self.form formRowAtIndex:indexPath];
+    return; // breakpoint log: @rowDescriptor@ tableView:didEndDisplayingCell:forRowAtIndexPath: @indexPath.section@/@indexPath.row@ @cell@
 }
 
 
